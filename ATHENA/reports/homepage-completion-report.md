@@ -83,6 +83,35 @@ Browser console:
 0 JavaScript errors
 ```
 
+## DNS / review-domain configuration
+
+Because this site is hosted on **Cloudflare Pages**, the correct DNS shape for the pre-production/review hostname is a proxied **CNAME** to the Pages project, not a manually chosen A record. Cloudflare Pages does not provide a stable origin IP that should be hard-coded as an A record for this use case; Cloudflare handles the edge routing behind the Pages custom-domain binding.
+
+Configured DNS record:
+
+```text
+Zone: frameq.io
+Type: CNAME
+Name: incue.frameq.io
+Target: incue-website.pages.dev
+Proxy: enabled
+TTL: auto
+Purpose: pre-production/review domain for Incue homepage
+```
+
+Verification:
+
+```text
+Cloudflare DNS API: record exists, proxied=true
+HTTP: https://incue.frameq.io/ -> 200
+```
+
+Reporting rule for future deployments:
+
+```text
+Every completion report must include the exact DNS record type, hostname, target, proxy status, TTL, verification result, and rationale when Athena chooses CNAME instead of A/AAAA.
+```
+
 ## Sitemap fix
 
 Issue: Footer linked directly to `sitemap.xml`, which shows XML/code-like output to human visitors. This is expected for crawlers but bad UX for a visible footer link.

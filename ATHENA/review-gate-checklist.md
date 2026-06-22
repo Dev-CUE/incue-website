@@ -32,3 +32,4 @@
   - Search Console/Naver ownership status.
   - Real logo/OG/client/partner asset status.
 - Include Cloudflare Pages settings and custom-domain/DNS status.
+- Include exact DNS record details for every configured hostname: record type, name, target/content, proxy status, TTL, zone, verification result, and rationale when CNAME is used instead of A/AAAA.
