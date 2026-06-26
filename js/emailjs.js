@@ -1,3 +1,40 @@
-(function(){const form=document.querySelector('[data-contact-form]');if(!form)return;form.addEventListener('submit',(event)=>{event.preventDefault();const status=form.querySelector('[data-form-status]');const privacy=form.querySelector('input[name="privacy"]');if(privacy&&!privacy.checked){if(status){status.hidden=false;status.textContent='개인정보 수집·이용 동의가 필요합니다.';}return;}if(status){status.hidden=false;status.textContent='현재 문의 폼은 안전모드입니다. EmailJS 또는 Cloudflare Pages Functions 설정 후 실제 발송됩니다.';}form.querySelector('button[type="submit"]')?.setAttribute('disabled','disabled');setTimeout(()=>form.querySelector('button[type="submit"]')?.removeAttribute('disabled'),1200);});})();
-// TODO: EmailJS 가입 후 Public Key, Service ID, Template ID 입력
-// 운영 안정화를 위해 Cloudflare Pages Functions + 서버 측 메일 발송 구조를 권장합니다.
+(function(){
+  const form=document.querySelector('[data-contact-form]');
+  if(!form)return;
+  const status=form.querySelector('[data-form-status]');
+  const submit=form.querySelector('button[type="submit"]');
+  const setStatus=(message,type='info')=>{
+    if(!status)return;
+    status.hidden=false;
+    status.textContent=message;
+    status.dataset.statusType=type;
+  };
+  form.addEventListener('submit',async(event)=>{
+    event.preventDefault();
+    if(!form.reportValidity())return;
+    const payload={};
+    const problems=[];
+    new FormData(form).forEach((value,key)=>{
+      if(key==='problem')problems.push(value);
+      else payload[key]=value;
+    });
+    payload.problem=problems;
+    submit?.setAttribute('disabled','disabled');
+    setStatus('진단 요청을 접수하는 중입니다.','info');
+    try{
+      const response=await fetch(form.action||'/api/contact',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload)
+      });
+      const result=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(result.message||'문의 접수 설정을 확인해야 합니다.');
+      setStatus(result.message||'진단 요청이 접수되었습니다. 담당자가 검토 후 연락드리겠습니다.','success');
+      form.reset();
+    }catch(error){
+      setStatus(error.message||'일시적으로 접수하지 못했습니다. 전화 또는 이메일로 문의해주세요.','error');
+    }finally{
+      submit?.removeAttribute('disabled');
+    }
+  });
+})();
